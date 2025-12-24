@@ -40,6 +40,12 @@ class Service60s {
           break
         }
 
+        case 'html': {
+          ctx.response.headers.set('Content-Type', 'text/html; charset=utf-8')
+          ctx.response.body = this.formatAsHtml(data)
+          break
+        }
+
         case 'image': {
           // test image url
           const response = await fetch(data.image, { method: 'HEAD' })
@@ -107,6 +113,43 @@ class Service60s {
       api_updated: Common.localeTime(now.valueOf()),
       api_updated_at: now.valueOf(),
     } satisfies DailyNewsItem
+  }
+
+  private formatAsHtml(data: DailyNewsItem): string {
+    const html: string[] = []
+    
+    html.push('<article>')
+    html.push('<h1>每天 60s 读懂世界</h1>')
+    html.push(`<p><time datetime="${data.date}">${data.date}</time> ${data.day_of_week} ${data.lunar_date}</p>`)
+    html.push('<ol>')
+    
+    data.news.forEach((e) => {
+      const newsItem = typeof e === 'string' ? { title: e, link: '' } : e
+      if (newsItem.link) {
+        html.push(`<li><a href="${newsItem.link}">${newsItem.title}</a></li>`)
+      } else {
+        html.push(`<li>${newsItem.title}</li>`)
+      }
+    })
+    
+    html.push('</ol>')
+    
+    if (data.tip) {
+      html.push('<footer>')
+      html.push('<strong>【微语】</strong>')
+      html.push(`<p>${data.tip}</p>`)
+      html.push('</footer>')
+    }
+    
+    if (data.image) {
+      html.push('<figure>')
+      html.push(`<img src="${data.image}" alt="每天 60s 读懂世界">`)
+      html.push('</figure>')
+    }
+    
+    html.push('</article>')
+    
+    return html.join('\n')
   }
 
   async #fetch(date?: string | null, forceUpdate = false): Promise<DailyNewsItem> {
